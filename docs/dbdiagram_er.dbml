@@ -1,0 +1,105 @@
+// dbdiagram.io ER Diagram Specification
+// Project: Peer-to-Peer Tourist Bike Rental Management System
+// Tool: https://dbdiagram.io
+
+Table LOCATION {
+  location_id varchar [pk, note: 'Unique identifier for location, e.g. L01']
+  address varchar [not null]
+  city varchar [not null]
+  state varchar [not null]
+  pincode varchar [not null]
+  pickup_instructions text
+}
+
+Table USER {
+  user_id varchar [pk, note: 'Unique user identifier, e.g. U100, U150, U201']
+  name varchar [not null]
+  email varchar [unique, not null]
+  phone varchar [not null]
+  password varchar [not null]
+  role varchar [note: 'Tourist | Owner | Admin']
+  verification_status varchar [note: 'Pending | Verified | Rejected']
+  account_status varchar [note: 'Active | Inactive | Suspended']
+  created_at timestamp
+}
+
+Table VEHICLE {
+  vehicle_id varchar [pk, note: 'Unique vehicle identifier, e.g. V301']
+  owner_id varchar [not null]
+  location_id varchar [not null]
+  vehicle_number varchar [unique, not null]
+  vehicle_type varchar [note: 'Scooter | Cruiser | Motorcycle']
+  brand varchar [not null]
+  model varchar [not null]
+  year int [not null]
+  rental_rate_per_day decimal [not null]
+  security_deposit decimal [not null]
+  vehicle_status varchar [note: 'Available | Booked | Under Maintenance | Inactive']
+}
+
+Table BOOKING {
+  booking_id varchar [pk, note: 'Unique booking identifier, e.g. B101']
+  tourist_id varchar [not null]
+  vehicle_id varchar [not null]
+  start_date date [not null]
+  end_date date [not null]
+  booking_date timestamp
+  rental_amount decimal [not null]
+  booking_status varchar [note: 'Pending | Approved | Rejected | Cancelled | Completed']
+  cancellation_reason text
+}
+
+Table PAYMENT {
+  payment_id varchar [pk, note: 'Unique payment identifier, e.g. P401']
+  booking_id varchar [not null]
+  amount decimal [not null]
+  payment_type varchar [note: 'Rental | Deposit | Refund | Penalty']
+  payment_status varchar [note: 'Pending | Success | Failed | Refunded']
+  payment_date timestamp
+  transaction_reference varchar [unique, not null]
+  commission_amount decimal [note: '10% platform commission']
+  owner_earning decimal [note: '90% owner payout']
+}
+
+Table INSPECTION {
+  inspection_id varchar [pk, note: 'Unique inspection identifier, e.g. I501']
+  booking_id varchar [not null]
+  inspection_type varchar [note: 'Pickup | Return']
+  inspection_date timestamp
+  vehicle_condition varchar [not null]
+  fuel_status varchar [note: 'Full | Half | Reserve']
+  notes text
+}
+
+Table DAMAGE_PENALTY {
+  incident_id varchar [pk, note: 'Unique incident identifier, e.g. D601']
+  booking_id varchar [not null]
+  incident_type varchar [note: 'Damage | Late Return | Other']
+  description text [not null]
+  amount decimal [not null]
+  reported_date timestamp
+  resolution_status varchar [note: 'Under review | Upheld | Waived | Resolved']
+}
+
+Table MAINTENANCE {
+  maintenance_id varchar [pk, note: 'Unique maintenance identifier, e.g. M701']
+  vehicle_id varchar [not null]
+  maintenance_type varchar [not null]
+  description text [not null]
+  maintenance_date timestamp
+  cost decimal [default: 0.0]
+  status varchar [note: 'In Progress | Completed']
+}
+
+// --------------------------------------------------------------------
+// Relationships and Cardinalities
+// --------------------------------------------------------------------
+
+Ref: USER.user_id < VEHICLE.owner_id          // 1 User (Owner) owns many Vehicles (1:N)
+Ref: LOCATION.location_id < VEHICLE.location_id // 1 Location hosts many Vehicles (1:N)
+Ref: USER.user_id < BOOKING.tourist_id        // 1 User (Tourist) makes many Bookings (1:N)
+Ref: VEHICLE.vehicle_id < BOOKING.vehicle_id  // 1 Vehicle is booked in many Bookings over time (1:N)
+Ref: BOOKING.booking_id < PAYMENT.booking_id  // 1 Booking has many Payments (Rental, Refund, Penalty) (1:N)
+Ref: BOOKING.booking_id < INSPECTION.booking_id // 1 Booking has 2 Inspections (Pickup, Return) (1:N)
+Ref: BOOKING.booking_id < DAMAGE_PENALTY.booking_id // 1 Booking can have 0 or more Damage Incidents (1:N)
+Ref: VEHICLE.vehicle_id < MAINTENANCE.vehicle_id // 1 Vehicle has 0 or more Maintenance Records (1:N)
